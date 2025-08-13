@@ -1,39 +1,39 @@
-//linker::system::subsystem  - Windows(/ SUBSYSTEM:WINDOWS)
+п»ї//linker::system::subsystem  - Windows(/ SUBSYSTEM:WINDOWS)
 //configuration::advanced::character set - not set
 //linker::input::additional dependensies Msimg32.lib; Winmm.lib
 
 #include "windows.h"
 
-// секция данных игры  
+// СЃРµРєС†РёСЏ РґР°РЅРЅС‹С… РёРіСЂС‹  
 typedef struct {
     float x, y, width, height, rad, dx, dy, speed;
-    HBITMAP hBitmap;//хэндл к спрайту шарика 
+    HBITMAP hBitmap;//С…СЌРЅРґР» Рє СЃРїСЂР°Р№С‚Сѓ С€Р°СЂРёРєР° 
 } sprite;
 
-sprite racket;//ракетка игрока
-sprite enemy;//ракетка противника
-sprite ball;//шарик
+sprite racket;//СЂР°РєРµС‚РєР° РёРіСЂРѕРєР°
+sprite enemy;//СЂР°РєРµС‚РєР° РїСЂРѕС‚РёРІРЅРёРєР°
+sprite ball;//С€Р°СЂРёРє
 
 struct {
-    int score, balls;//количество набранных очков и оставшихся "жизней"
-    bool action = false;//состояние - ожидание (игрок должен нажать пробел) или игра
+    int score, balls;//РєРѕР»РёС‡РµСЃС‚РІРѕ РЅР°Р±СЂР°РЅРЅС‹С… РѕС‡РєРѕРІ Рё РѕСЃС‚Р°РІС€РёС…СЃСЏ "Р¶РёР·РЅРµР№"
+    bool action = false;//СЃРѕСЃС‚РѕСЏРЅРёРµ - РѕР¶РёРґР°РЅРёРµ (РёРіСЂРѕРє РґРѕР»Р¶РµРЅ РЅР°Р¶Р°С‚СЊ РїСЂРѕР±РµР») РёР»Рё РёРіСЂР°
 } game;
 
 struct {
-    HWND hWnd;//хэндл окна
-    HDC device_context, context;// два контекста устройства (для буферизации)
-    int width, height;//сюда сохраним размеры окна которое создаст программа
+    HWND hWnd;//С…СЌРЅРґР» РѕРєРЅР°
+    HDC device_context, context;// РґРІР° РєРѕРЅС‚РµРєСЃС‚Р° СѓСЃС‚СЂРѕР№СЃС‚РІР° (РґР»СЏ Р±СѓС„РµСЂРёР·Р°С†РёРё)
+    int width, height;//СЃСЋРґР° СЃРѕС…СЂР°РЅРёРј СЂР°Р·РјРµСЂС‹ РѕРєРЅР° РєРѕС‚РѕСЂРѕРµ СЃРѕР·РґР°СЃС‚ РїСЂРѕРіСЂР°РјРјР°
 } window;
 
-HBITMAP hBack;// хэндл для фонового изображения
+HBITMAP hBack;// С…СЌРЅРґР» РґР»СЏ С„РѕРЅРѕРІРѕРіРѕ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
 
-//cекция кода
+//cРµРєС†РёСЏ РєРѕРґР°
 
 void InitGame()
 {
-    //в этой секции загружаем спрайты с помощью функций gdi
-    //пути относительные - файлы должны лежать рядом с .exe 
-    //результат работы LoadImageA сохраняет в хэндлах битмапов, рисование спрайтов будет произовдиться с помощью этих хэндлов
+    //РІ СЌС‚РѕР№ СЃРµРєС†РёРё Р·Р°РіСЂСѓР¶Р°РµРј СЃРїСЂР°Р№С‚С‹ СЃ РїРѕРјРѕС‰СЊСЋ С„СѓРЅРєС†РёР№ gdi
+    //РїСѓС‚Рё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹Рµ - С„Р°Р№Р»С‹ РґРѕР»Р¶РЅС‹ Р»РµР¶Р°С‚СЊ СЂСЏРґРѕРј СЃ .exe 
+    //СЂРµР·СѓР»СЊС‚Р°С‚ СЂР°Р±РѕС‚С‹ LoadImageA СЃРѕС…СЂР°РЅСЏРµС‚ РІ С…СЌРЅРґР»Р°С… Р±РёС‚РјР°РїРѕРІ, СЂРёСЃРѕРІР°РЅРёРµ СЃРїСЂР°Р№С‚РѕРІ Р±СѓРґРµС‚ РїСЂРѕРёР·РѕРІРґРёС‚СЊСЃСЏ СЃ РїРѕРјРѕС‰СЊСЋ СЌС‚РёС… С…СЌРЅРґР»РѕРІ
     ball.hBitmap = (HBITMAP)LoadImageA(NULL, "ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     enemy.hBitmap = (HBITMAP)LoadImageA(NULL, "racket_enemy.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -42,18 +42,18 @@ void InitGame()
 
     racket.width = 300;
     racket.height = 50;
-    racket.speed = 30;//скорость перемещения ракетки
-    racket.x = window.width / 2.;//ракетка посередине окна
-    racket.y = window.height - racket.height;//чуть выше низа экрана - на высоту ракетки
+    racket.speed = 30;//СЃРєРѕСЂРѕСЃС‚СЊ РїРµСЂРµРјРµС‰РµРЅРёСЏ СЂР°РєРµС‚РєРё
+    racket.x = window.width / 2.;//СЂР°РєРµС‚РєР° РїРѕСЃРµСЂРµРґРёРЅРµ РѕРєРЅР°
+    racket.y = window.height - racket.height;//С‡СѓС‚СЊ РІС‹С€Рµ РЅРёР·Р° СЌРєСЂР°РЅР° - РЅР° РІС‹СЃРѕС‚Сѓ СЂР°РєРµС‚РєРё
 
-    enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
+    enemy.x = racket.x;//С… РєРѕРѕСЂРґРёРЅР°С‚Сѓ РѕРїРїРѕРЅРµС‚Р° СЃС‚Р°РІРёРј РІ С‚Сѓ Р¶Рµ С‚РѕС‡РєСѓ С‡С‚Рѕ Рё РёРіСЂРѕРєР°
 
-    ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
-    ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
+    ball.dy = (rand() % 65 + 35) / 100.;//С„РѕСЂРјРёСЂСѓРµРј РІРµРєС‚РѕСЂ РїРѕР»РµС‚Р° С€Р°СЂРёРєР°
+    ball.dx = -(1 - ball.dy);//С„РѕСЂРјРёСЂСѓРµРј РІРµРєС‚РѕСЂ РїРѕР»РµС‚Р° С€Р°СЂРёРєР°
     ball.speed = 11;
     ball.rad = 20;
-    ball.x = racket.x;//x координата шарика - на середие ракетки
-    ball.y = racket.y - ball.rad;//шарик лежит сверху ракетки
+    ball.x = racket.x;//x РєРѕРѕСЂРґРёРЅР°С‚Р° С€Р°СЂРёРєР° - РЅР° СЃРµСЂРµРґРёРµ СЂР°РєРµС‚РєРё
+    ball.y = racket.y - ball.rad;//С€Р°СЂРёРє Р»РµР¶РёС‚ СЃРІРµСЂС…Сѓ СЂР°РєРµС‚РєРё
 
     game.score = 0;
     game.balls = 9;
@@ -61,22 +61,19 @@ void InitGame()
    
 }
 
-void ProcessSound(const char* name)//проигрывание аудиофайла в формате .wav, файл должен лежать в той же папке где и программа
-{
-    PlaySound(TEXT(name), NULL, SND_FILENAME | SND_ASYNC);//переменная name содежрит имя файла. флаг ASYNC позволяет проигрывать звук паралельно с исполнением программы
-}
+
 
 void ShowScore()
 {
-    //поиграем шрифтами и цветами
+    //РїРѕРёРіСЂР°РµРј С€СЂРёС„С‚Р°РјРё Рё С†РІРµС‚Р°РјРё
     SetTextColor(window.context, RGB(160, 160, 160));
     SetBkColor(window.context, RGB(0, 0, 0));
     SetBkMode(window.context, TRANSPARENT);
     auto hFont = CreateFont(70, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 2, 0, "CALIBRI");
     auto hTmp = (HFONT)SelectObject(window.context, hFont);
 
-    char txt[32];//буфер для текста
-    _itoa_s(game.score, txt, 10);//преобразование числовой переменной в текст. текст окажется в переменной txt
+    char txt[32];//Р±СѓС„РµСЂ РґР»СЏ С‚РµРєСЃС‚Р°
+    _itoa_s(game.score, txt, 10);//РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ С‡РёСЃР»РѕРІРѕР№ РїРµСЂРµРјРµРЅРЅРѕР№ РІ С‚РµРєСЃС‚. С‚РµРєСЃС‚ РѕРєР°Р¶РµС‚СЃСЏ РІ РїРµСЂРµРјРµРЅРЅРѕР№ txt
     TextOutA(window.context, 10, 10, "Score", 5);
     TextOutA(window.context, 200, 10, (LPCSTR)txt, strlen(txt));
 
@@ -90,11 +87,7 @@ void ProcessInput()
     if (GetAsyncKeyState(VK_LEFT)) racket.x -= racket.speed;
     if (GetAsyncKeyState(VK_RIGHT)) racket.x += racket.speed;
 
-    if (!game.action && GetAsyncKeyState(VK_SPACE))
-    {
-        game.action = true;
-        ProcessSound("bounce.wav");
-    }
+    
 }
 
 void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool alpha = false)
@@ -103,134 +96,52 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
     HDC hMemDC;
     BITMAP bm;
 
-    hMemDC = CreateCompatibleDC(hDC); // Создаем контекст памяти, совместимый с контекстом отображения
-    hOldbm = (HBITMAP)SelectObject(hMemDC, hBitmapBall);// Выбираем изображение bitmap в контекст памяти
+    hMemDC = CreateCompatibleDC(hDC); // РЎРѕР·РґР°РµРј РєРѕРЅС‚РµРєСЃС‚ РїР°РјСЏС‚Рё, СЃРѕРІРјРµСЃС‚РёРјС‹Р№ СЃ РєРѕРЅС‚РµРєСЃС‚РѕРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+    hOldbm = (HBITMAP)SelectObject(hMemDC, hBitmapBall);// Р’С‹Р±РёСЂР°РµРј РёР·РѕР±СЂР°Р¶РµРЅРёРµ bitmap РІ РєРѕРЅС‚РµРєСЃС‚ РїР°РјСЏС‚Рё
 
-    if (hOldbm) // Если не было ошибок, продолжаем работу
+    if (hOldbm) // Р•СЃР»Рё РЅРµ Р±С‹Р»Рѕ РѕС€РёР±РѕРє, РїСЂРѕРґРѕР»Р¶Р°РµРј СЂР°Р±РѕС‚Сѓ
     {
-        GetObject(hBitmapBall, sizeof(BITMAP), (LPSTR)&bm); // Определяем размеры изображения
+        GetObject(hBitmapBall, sizeof(BITMAP), (LPSTR)&bm); // РћРїСЂРµРґРµР»СЏРµРј СЂР°Р·РјРµСЂС‹ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
 
         if (alpha)
         {
-            TransparentBlt(window.context, x, y, x1, y1, hMemDC, 0, 0, x1, y1, RGB(0, 0, 0));//все пиксели черного цвета будут интепретированы как прозрачные
+            TransparentBlt(window.context, x, y, x1, y1, hMemDC, 0, 0, x1, y1, RGB(0, 0, 0));//РІСЃРµ РїРёРєСЃРµР»Рё С‡РµСЂРЅРѕРіРѕ С†РІРµС‚Р° Р±СѓРґСѓС‚ РёРЅС‚РµРїСЂРµС‚РёСЂРѕРІР°РЅС‹ РєР°Рє РїСЂРѕР·СЂР°С‡РЅС‹Рµ
         }
         else
         {
-            StretchBlt(hDC, x, y, x1, y1, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY); // Рисуем изображение bitmap
+            StretchBlt(hDC, x, y, x1, y1, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY); // Р РёСЃСѓРµРј РёР·РѕР±СЂР°Р¶РµРЅРёРµ bitmap
         }
 
-        SelectObject(hMemDC, hOldbm);// Восстанавливаем контекст памяти
+        SelectObject(hMemDC, hOldbm);// Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј РєРѕРЅС‚РµРєСЃС‚ РїР°РјСЏС‚Рё
     }
 
-    DeleteDC(hMemDC); // Удаляем контекст памяти
+    DeleteDC(hMemDC); // РЈРґР°Р»СЏРµРј РєРѕРЅС‚РµРєСЃС‚ РїР°РјСЏС‚Рё
 }
 
 void ShowRacketAndBall()
 {
-    ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
-    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap);// ракетка игрока
+    ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//Р·Р°РґРЅРёР№ С„РѕРЅ
+    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap);// СЂР°РєРµС‚РєР° РёРіСЂРѕРєР°
 
-    if (ball.dy < 0 && (enemy.x - racket.width / 4 > ball.x || ball.x > enemy.x + racket.width / 4))
-    {
-        //имитируем разумность оппонента. на самом деле, компьютер никогда не проигрывает, и мы не считаем попадает ли его ракетка по шарику
-        //вместо этого, мы всегда делаем отскок от потолка, а раектку противника двигаем - подставляем под шарик
-        //движение будет только если шарик летит вверх, и только если шарик по оси X выходит за пределы половины длины ракетки
-        //в этом случае, мы смешиваем координаты ракетки и шарика в пропорции 9 к 1
-        enemy.x = ball.x * .1 + enemy.x * .9;
-    }
 
-    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap);//ракетка оппонента
-    ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);// шарик
+    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap);//СЂР°РєРµС‚РєР° РѕРїРїРѕРЅРµРЅС‚Р°
+    ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);// С€Р°СЂРёРє
 }
 
 void LimitRacket()
 {
-    racket.x = max(racket.x, racket.width / 2.);//если коодината левого угла ракетки меньше нуля, присвоим ей ноль
-    racket.x = min(racket.x, window.width - racket.width / 2.);//аналогично для правого угла
+    racket.x = max(racket.x, racket.width / 2.);//РµСЃР»Рё РєРѕРѕРґРёРЅР°С‚Р° Р»РµРІРѕРіРѕ СѓРіР»Р° СЂР°РєРµС‚РєРё РјРµРЅСЊС€Рµ РЅСѓР»СЏ, РїСЂРёСЃРІРѕРёРј РµР№ РЅРѕР»СЊ
+    racket.x = min(racket.x, window.width - racket.width / 2.);//Р°РЅР°Р»РѕРіРёС‡РЅРѕ РґР»СЏ РїСЂР°РІРѕРіРѕ СѓРіР»Р°
 }
 
-void CheckWalls()
-{
-    if (ball.x < ball.rad || ball.x > window.width - ball.rad)
-    {
-        ball.dx *= -1;
-        ProcessSound("bounce.wav");
-    }
-}
 
-void CheckRoof()
-{
-    if (ball.y < ball.rad + racket.height)
-    {
-        ball.dy *= -1;
-        ProcessSound("bounce.wav");
-    }
-}
 
 bool tail = false;
 
-void CheckFloor()
-{
-    if (ball.y > window.height - ball.rad - racket.height)//шарик пересек линию отскока - горизонталь ракетки
-    {
-        if (!tail && ball.x >= racket.x - racket.width / 2. - ball.rad && ball.x <= racket.x + racket.width / 2. + ball.rad)//шарик отбит, и мы не в режиме обработки хвоста
-        {
-            game.score++;//за каждое отбитие даем одно очко
-            ball.speed += 5. / game.score;//но увеличиваем сложность - прибавляем скорости шарику
-            ball.dy *= -1;//отскок
-            racket.width -= 10. / game.score;//дополнительно уменьшаем ширину ракетки - для сложности
-            ProcessSound("bounce.wav");//играем звук отскока
-        }
-        else
-        {//шарик не отбит
 
-            tail = true;//дадим шарику упасть ниже ракетки
 
-            if (ball.y - ball.rad > window.height)//если шарик ушел за пределы окна
-            {
-                game.balls--;//уменьшаем количество "жизней"
 
-                ProcessSound("fail.wav");//играем звук
 
-                if (game.balls < 0) { //проверка условия окончания "жизней"
-
-                    MessageBoxA(window.hWnd, "game over", "", MB_OK);//выводим сообщение о проигрыше
-                    InitGame();//переинициализируем игру
-                }
-
-                ball.dy = (rand() % 65 + 35) / 100.;//задаем новый случайный вектор для шарика
-                ball.dx = -(1 - ball.dy);
-                ball.x = racket.x;//инициализируем координаты шарика - ставим его на ракетку
-                ball.y = racket.y - ball.rad;
-                game.action = false;//приостанавливаем игру, пока игрок не нажмет пробел
-                tail = false;
-            }
-        }
-    }
-}
-
-void ProcessRoom()
-{
-    //обрабатываем стены, потолок и пол. принцип - угол падения равен углу отражения, а значит, для отскока мы можем просто инвертировать часть вектора движения шарика
-    CheckWalls();
-    CheckRoof();
-    CheckFloor();
-}
-
-void ProcessBall()
-{
-    if (game.action)
-    {
-        //если игра в активном режиме - перемещаем шарик
-        ball.x += ball.dx * ball.speed;
-        ball.y += ball.dy * ball.speed;
-    }
-    else
-    {
-        //иначе - шарик "приклеен" к ракетке
-        ball.x = racket.x;
-    }
-}
 
 void InitWindow()
 {
@@ -239,11 +150,11 @@ void InitWindow()
 
     RECT r;
     GetClientRect(window.hWnd, &r);
-    window.device_context = GetDC(window.hWnd);//из хэндла окна достаем хэндл контекста устройства для рисования
-    window.width = r.right - r.left;//определяем размеры и сохраняем
+    window.device_context = GetDC(window.hWnd);//РёР· С…СЌРЅРґР»Р° РѕРєРЅР° РґРѕСЃС‚Р°РµРј С…СЌРЅРґР» РєРѕРЅС‚РµРєСЃС‚Р° СѓСЃС‚СЂРѕР№СЃС‚РІР° РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ
+    window.width = r.right - r.left;//РѕРїСЂРµРґРµР»СЏРµРј СЂР°Р·РјРµСЂС‹ Рё СЃРѕС…СЂР°РЅСЏРµРј
     window.height = r.bottom - r.top;
-    window.context = CreateCompatibleDC(window.device_context);//второй буфер
-    SelectObject(window.context, CreateCompatibleBitmap(window.device_context, window.width, window.height));//привязываем окно к контексту
+    window.context = CreateCompatibleDC(window.device_context);//РІС‚РѕСЂРѕР№ Р±СѓС„РµСЂ
+    SelectObject(window.context, CreateCompatibleBitmap(window.device_context, window.width, window.height));//РїСЂРёРІСЏР·С‹РІР°РµРј РѕРєРЅРѕ Рє РєРѕРЅС‚РµРєСЃС‚Сѓ
     GetClientRect(window.hWnd, &r);
 
 }
@@ -254,23 +165,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_ int       nCmdShow)
 {
     
-    InitWindow();//здесь инициализируем все что нужно для рисования в окне
-    InitGame();//здесь инициализируем переменные игры
+    InitWindow();//Р·РґРµСЃСЊ РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РІСЃРµ С‡С‚Рѕ РЅСѓР¶РЅРѕ РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ РІ РѕРєРЅРµ
+    InitGame();//Р·РґРµСЃСЊ РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РїРµСЂРµРјРµРЅРЅС‹Рµ РёРіСЂС‹
 
-    mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
     ShowCursor(NULL);
     
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
-        ShowRacketAndBall();//рисуем фон, ракетку и шарик
-        ShowScore();//рисуем очик и жизни
-        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
-        Sleep(16);//ждем 16 милисекунд (1/количество кадров в секунду)
+        ShowRacketAndBall();//СЂРёСЃСѓРµРј С„РѕРЅ, СЂР°РєРµС‚РєСѓ Рё С€Р°СЂРёРє
+        ShowScore();//СЂРёСЃСѓРµРј РѕС‡РёРє Рё Р¶РёР·РЅРё
+        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//РєРѕРїРёСЂСѓРµРј Р±СѓС„РµСЂ РІ РѕРєРЅРѕ
+        Sleep(16);//Р¶РґРµРј 16 РјРёР»РёСЃРµРєСѓРЅРґ (1/РєРѕР»РёС‡РµСЃС‚РІРѕ РєР°РґСЂРѕРІ РІ СЃРµРєСѓРЅРґСѓ)
 
-        ProcessInput();//опрос клавиатуры
-        LimitRacket();//проверяем, чтобы ракетка не убежала за экран
-        ProcessBall();//перемещаем шарик
-        ProcessRoom();//обрабатываем отскоки от стен и каретки, попадание шарика в картетку
+        ProcessInput();//РѕРїСЂРѕСЃ РєР»Р°РІРёР°С‚СѓСЂС‹
+        LimitRacket();//РїСЂРѕРІРµСЂСЏРµРј, С‡С‚РѕР±С‹ СЂР°РєРµС‚РєР° РЅРµ СѓР±РµР¶Р°Р»Р° Р·Р° СЌРєСЂР°РЅ
     }
 
 }

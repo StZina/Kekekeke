@@ -13,6 +13,7 @@ typedef struct {
 sprite racket;//ракетка игрока
 sprite enemy;//ракетка противника
 sprite ball;//шарик
+sprite platform; 
 
 struct {
     int score, balls;//количество набранных очков и оставшихся "жизней"
@@ -38,13 +39,20 @@ void InitGame()
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     enemy.hBitmap = (HBITMAP)LoadImageA(NULL, "racket_enemy.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    platform.hBitmap = (HBITMAP)LoadImageA(NULL, "racket2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE); 
     //------------------------------------------------------
 
-    racket.width = 300;
-    racket.height = 50;
+    racket.width = 500;
+    racket.height = 300;
     racket.speed = 30;//скорость перемещения ракетки
     racket.x = window.width / 2.;//ракетка посередине окна
     racket.y = window.height - racket.height;//чуть выше низа экрана - на высоту ракетки
+
+   
+    platform.y = racket.x;
+    platform.height = 100;
+    platform.width = 300; 
+    platform.x = window.width - platform.width;
 
     enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
 
@@ -52,6 +60,7 @@ void InitGame()
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
     ball.speed = 11;
     ball.rad = 20;
+
     ball.x = racket.x;//x координата шарика - на середие ракетки
     ball.y = racket.y - ball.rad;//шарик лежит сверху ракетки
 
@@ -121,10 +130,10 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 void ShowRacketAndBall()
 {
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
-    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap);// ракетка игрока
+    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap, true);// ракетка игрока
 
-
-    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap);//ракетка оппонента
+    ShowBitmap(window.context, platform.x, platform.y, platform.width, platform.height, platform.hBitmap);
+    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap, true);//ракетка оппонента
     ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);// шарик
 }
 
@@ -159,6 +168,18 @@ void InitWindow()
 
 }
 
+
+void Collise() {
+    
+    if (platform.x == racket.x + racket.width) {
+        racket.x = 100; 
+    }
+
+
+
+
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR    lpCmdLine,
@@ -176,9 +197,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         ShowScore();//рисуем очик и жизни
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
         Sleep(16);//ждем 16 милисекунд (1/количество кадров в секунду)
-
+        Collise();
         ProcessInput();//опрос клавиатуры
         LimitRacket();//проверяем, чтобы ракетка не убежала за экран
+       
     }
 
 }

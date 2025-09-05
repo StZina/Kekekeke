@@ -52,12 +52,12 @@ void InitGame()
     racket.isJumping = false;
     racket.jumpSpeed = 15.0f;
 
-    platform.width =600;
-    platform.height = 300;
-    platform.x = window.width - platform.width;
-    platform.y = window.height * 3 / 4; // платформа выше
+    platform.width = 100;
+    platform.height = 200;
+    platform.x = window.width /2;
+    platform.y = window.height / 2; // платформа выше
 
-    enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
+    //enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
 
     ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
@@ -132,11 +132,11 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 void ShowRacketAndBall()
 {
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
-    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap, true);// ракетка игрока
+    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap);// 
 
-    ShowBitmap(window.context, platform.x, platform.y, platform.width, platform.height, platform.hBitmap, true);
-    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap, true);//ракетка оппонента
-    ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);// шарик
+    ShowBitmap(window.context, platform.x, platform.y, platform.width, platform.height, platform.hBitmap);
+    //ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap);//
+    //ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);
 }
 
 void LimitRacket()
@@ -145,11 +145,11 @@ void LimitRacket()
     racket.x = min(racket.x, window.width - racket.width / 2.);
 }
 
-bool CheckCollision(sprite a, sprite b)
+bool Collision(sprite a, sprite b)
 {
     // Учитываем центрирование ракетки
-    float racketLeft = a.x - a.width / 2;
-    float racketRight = a.x + a.width / 2;
+    float racketLeft = racket.x - a.width / 2;
+    float racketRight = racket.x + a.width / 2;
     float racketTop = a.y;
     float racketBottom = a.y + a.height;
 
@@ -158,16 +158,38 @@ bool CheckCollision(sprite a, sprite b)
     float platformTop = b.y;
     float platformBottom = b.y + b.height;
 
-    return (racketLeft < platformRight &&
-        racketRight > platformLeft &&
-        racketTop < platformBottom &&
+    return (racketLeft < platformRight ||
+        racketRight > platformLeft ||
+
+        racketTop < platformBottom ||
         racketBottom > platformTop);
+} 
+
+void Collision2() {
+    float racketLeft = racket.x ;
+    float racketRight = racket.x + racket.width;
+    float racketTop = racket.y;
+    float racketBottom = racket.y + racket.height;
+
+    float platformLeft = platform.x;
+    float platformRight = platform.x + platform.width;
+    float platformTop = platform.y;
+    float platformBottom = platform.y + platform.height;
+
+    if (racketLeft <= platformRight &&
+        racketRight >= platformLeft &&
+        racketTop <= platformBottom &&
+        racketBottom >= platformTop) {
+
+        racket.x = 10;
+
+    }
 }
 
-void Collise() {
-    // Гравитация и движение прыжка
+void ProcessJumping() {
+     // Гравитация и движение прыжка
     if (racket.isJumping) {
-        racket.dy += 0.8f;
+        racket.dy += 0.5f;
         racket.y += racket.dy;
 
         // Если упали на землю
@@ -179,14 +201,14 @@ void Collise() {
     }
 
     // Проверяем столкновение с платформой
-    if (CheckCollision(racket, platform)) {
-        // Если ракетка падает сверху на платформу
-        if (racket.dy > 0) {
-            racket.y = platform.y - racket.height;
-            racket.isJumping = false;
-            racket.dy = 0;
-        }
-    }
+    //if (Collision(racket, platform)) {
+    //    // Если ракетка падает сверху на платформу
+    //    if (racket.dy > 0) {
+    //        racket.y = platform.y - racket.height;
+    //        racket.isJumping = false;
+    //        racket.dy = 0;
+    //    }
+    //}
 }
 
 void InitWindow()
@@ -216,9 +238,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
         ProcessInput();
-        Collise();
+        ProcessJumping();
         LimitRacket();
-
+        Collision2();
         ShowRacketAndBall();
         ShowScore();
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);

@@ -6,7 +6,7 @@
 
 // секция данных игры  
 typedef struct {
-    float x, y, width, height, rad, dx, dy, speed;
+    float x, y, width, height, rad, dx, Grav, speed;
     HBITMAP hBitmap;//хэндл к спрайту шарика 
     bool isJumping;    // флаг прыжка
     float jumpSpeed;   // скорость прыжка
@@ -44,23 +44,23 @@ void InitGame()
     platform.hBitmap = (HBITMAP)LoadImageA(NULL, "racket2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     //------------------------------------------------------
 
-    racket.width = 500;
-    racket.height = 300;
+    racket.width = 100;
+    racket.height = 50;
     racket.speed = 30;//скорость перемещения ракетки
     racket.x = window.width / 2.;//ракетка посередине окна
     racket.y = window.height - racket.height;//чуть выше низа экрана - на высоту ракетки
     racket.isJumping = false;
     racket.jumpSpeed = 15.0f;
 
-    platform.width = 100;
-    platform.height = 200;
+    platform.width = 200;
+    platform.height = 100;
     platform.x = window.width /2;
-    platform.y = window.height / 2; // платформа выше
+    platform.y = window.height / 1.2; // платформа выше
 
     //enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
 
-    ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
-    ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
+    ball.Grav = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
+    ball.dx = -(1 - ball.Grav);//формируем вектор полета шарика
     ball.speed = 11;
     ball.rad = 20;
 
@@ -97,7 +97,7 @@ void ProcessInput()
     // Прыжок при нажатии пробела
     if (GetAsyncKeyState(VK_SPACE) && !racket.isJumping) {
         racket.isJumping = true;
-        racket.dy = -racket.jumpSpeed;
+        racket.Grav = -racket.jumpSpeed;
     }
 }
 
@@ -158,11 +158,10 @@ bool Collision(sprite a, sprite b)
     float platformTop = b.y;
     float platformBottom = b.y + b.height;
 
-    return (racketLeft < platformRight ||
-        racketRight > platformLeft ||
-
-        racketTop < platformBottom ||
-        racketBottom > platformTop);
+    return (racketLeft < platformRight &&
+            racketRight > platformLeft &&
+            racketTop < platformBottom &&
+            racketBottom > platformTop);
 } 
 
 void Collision2() {
@@ -181,22 +180,27 @@ void Collision2() {
         racketTop <= platformBottom &&
         racketBottom >= platformTop) {
 
-        racket.x = 10;
+        
+       
+       /* racket.isJumping = false ;*/
+        /*racket.Grav = 0;*/
+
 
     }
 }
 
 void ProcessJumping() {
      // Гравитация и движение прыжка
+
+    racket.y += racket.Grav;
     if (racket.isJumping) {
-        racket.dy += 0.5f;
-        racket.y += racket.dy;
+        racket.Grav += 0.5f;
 
         // Если упали на землю
         if (racket.y > window.height - racket.height) {
             racket.y = window.height - racket.height;
             racket.isJumping = false;
-            racket.dy = 0;
+            racket.Grav = 0;
         }
     }
 

@@ -138,6 +138,7 @@
     <Image Include="..\Debug\ball.bmp" />
     <Image Include="..\Debug\racket.bmp" />
     <Image Include="..\Debug\racket2.bmp" />
+    <Image Include="..\Debug\racket3.bmp" />
     <Image Include="..\Debug\racket_enemy.bmp" />
   </ItemGroup>
   <ItemGroup>

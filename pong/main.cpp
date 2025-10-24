@@ -55,7 +55,7 @@ void InitGame()
     racket.width = 100;
     racket.height = 50;
     racket.speed = 30;
-    racket.x = window.width / 2.0f;
+    racket.x = (window.width - racket.width) / 2.0f;
     racket.y = window.height - racket.height;
     racket.isJumping = false;
     racket.jumpSpeed = 15.0f;
@@ -115,8 +115,8 @@ void MoveBall() {// ДВИЖЕНИЯ ШАРА
 void CheckBallRacketCollision() {
     if (!isBallActive) return;  // если шар не активен, выходим
 
-    float racketLeft = racket.x - racket.width / 2;
-    float racketRight = racket.x + racket.width / 2;
+    float racketLeft = racket.x;
+    float racketRight = racket.x + racket.width;
     float racketTop = racket.y;
     float racketBottom = racket.y + racket.height;
 
@@ -214,7 +214,7 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 void ShowRacketAndBall()
 {
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
-    ShowBitmap(window.context, racket.x - racket.width / 2.0f, racket.y, racket.width, racket.height, racket.hBitmap);// 
+    ShowBitmap(window.context, (int)racket.x, (int)racket.y, (int)racket.width, (int)racket.height, racket.hBitmap);// 
 
     // ОТРИСОВКА ВСЕХ ПЛАТФОРМ
     for (int i = 0; i < PLATFORM_COUNT; i++) {
@@ -233,8 +233,8 @@ void ShowRacketAndBall()
 
 void LimitRacket()
 {
-    racket.x = max(racket.x, racket.width / 2.0f);
-    racket.x = min(racket.x, window.width - racket.width / 2.0f);
+    racket.x = max(racket.x, 0.0f);
+    racket.x = min(racket.x, window.width - racket.width);
 }
 
 //bool Collision(sprite a, sprite b)
@@ -258,9 +258,8 @@ void LimitRacket()
 
 bool HelpColl(sprite a, sprite b)
 {
-
-     if (a.x +a.width >= b.x  &&
-         a.x  <= b.x + b.width &&
+     if (a.x + a.width >= b.x  &&
+         a.x <= b.x + b.width &&
          a.y + a.height >= b.y &&
          a.y <= b.y + b.height)
 
@@ -272,44 +271,87 @@ bool HelpColl(sprite a, sprite b)
 }
 
 void Coll() {
-
     for (int i = 0; i < PLATFORM_COUNT; i++) {
-
         if (HelpColl(racket, platforms[i])) {
-            //racket.x = 100;
 
-              float UP = abs((racket.y + racket.height) - platforms[i].y);
-              float DOWN = abs(racket.y - (platforms[i].y + platforms[i].height));
+            float UP = abs((racket.y + racket.height) - platforms[i].y);
+            float DOWN = abs(racket.y - (platforms[i].y + platforms[i].height));
+            float LEFT = abs((racket.x + racket.width) - platforms[i].x);
+            float RIGHT = abs(racket.x - (platforms[i].x + platforms[i].width));
 
-              float overY = min(UP, DOWN);
-              float overX = 15; // тоже как выше
+            float overY = min(UP, DOWN);
+            float overX = min(LEFT, RIGHT);
 
-              int a = 1;
+            if (overY < overX) {
 
-              if (overY < overX) {
-
-                  if (UP < DOWN) {
-
-                      racket.x = platforms[i].x - racket.height;
-
-
-                  }
-                  else {
-
-                      racket.x = platforms[i].y + platforms[i].height;
-
-                  }
-              }
+                if (UP < DOWN) {
+                    racket.y = platforms[i].y - racket.height;
+                    racket.isJumping = false;
+                    racket.Grav = 0;
+                }
+                else {
+                    racket.y = platforms[i].y + platforms[i].height;
+                    racket.Grav = 0.5f;
+                }
+            }
+            else {
+               
+                if (LEFT < RIGHT) {
+                    racket.x = platforms[i].x - racket.width;    
+                }
+                else {
+                    racket.x = platforms[i].x + platforms[i].width;  
+                }
+            }
         }
- 
-    
-    
-    
-    
-    
-    
     }
 }
+
+ 
+void BallColl() {
+ 
+    for (int i = 0; i < PLATFORM_COUNT; i++) {
+        if (HelpColl(ball, platforms[i])) {
+
+            float UP = abs((ball.y + ball.height) - platforms[i].y);
+            float DOWN = abs(ball.y - (platforms[i].y + platforms[i].height));
+            float LEFT = abs((ball.x + ball.width) - platforms[i].x);
+            float RIGHT = abs(ball.x - (platforms[i].x + platforms[i].width));
+
+            float overY = min(UP, DOWN);
+            float overX = min(LEFT, RIGHT);
+
+            if (overY < overX) {
+
+                if (UP < DOWN) {
+                    ball.y = platforms[i].y - ball.height;
+                    ball.Grav = -ball.Grav;
+                }
+                else {
+                    ball.y = platforms[i].y + platforms[i].height;
+                    ball.Grav = -ball.Grav;  
+                }
+            }
+            else {
+
+                if (LEFT < RIGHT) {
+                    ball.x = platforms[i].x - ball.width;
+                    ball.dx = -ball.dx;
+                }
+                else {
+                    ball.x = platforms[i].x + platforms[i].width;
+                    ball.dx = -ball.dx;
+                }
+            }
+        }
+    }
+
+}
+    
+    
+    
+    
+    
 
 
 
@@ -491,9 +533,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
         ProcessInput();
         ProcessJumping();
-        LimitRacket();
+       
       /*  Collision2();*/
+        BallColl();
         Coll();
+        LimitRacket();
         MoveBall();                    // Движение шара
         CheckBallRacketCollision();// Проверка столкновения шара с ракеткой
        /* CheckBallPlatformCollision();*/ // Проверка столкновения шара с платформой

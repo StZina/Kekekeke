@@ -14,8 +14,7 @@ typedef struct {
 
 #define PLATFORM_COUNT 6  // количество платформ
 
-sprite racket;//ракетка игрока
-sprite enemy;//ракетка противника
+sprite racket;//игрок
 sprite ball;//шарик
 sprite platforms[PLATFORM_COUNT];// массив платформ
 
@@ -36,6 +35,26 @@ struct {
 HBITMAP hBack;// хэндл для фонового изображения
 
 
+struct {
+
+    POINT p;
+
+    bool collise_mouse() {
+
+        if (p.x >= racket.x &&
+            p.x <= racket.x + racket.width &&
+            p.y <= racket.y + racket.height &&
+            p.y >= racket.y)
+            return true;
+
+        else
+            return false;
+
+    }
+
+}mouse;
+
+
 void InitGame()
 {
     //в этой секции загружаем спрайты с помощью функций gdi
@@ -43,14 +62,13 @@ void InitGame()
     //результат работы LoadImageA сохраняет в хэндлах битмапов, рисование спрайтов будет произовдиться с помощью этих хэндлов
     ball.hBitmap = (HBITMAP)LoadImageA(NULL, "ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    enemy.hBitmap = (HBITMAP)LoadImageA(NULL, "racket_enemy.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     // ЗАГРУЗКА ПЛАТФОРМ
     for (int i = 0; i < PLATFORM_COUNT; i++) {
         platforms[i].hBitmap = (HBITMAP)LoadImageA(NULL, "racket2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     }
-   
+
 
     racket.width = 100;
     racket.height = 50;
@@ -131,13 +149,13 @@ void CheckBallRacketCollision() {
         racketTop <= ballBottom &&
         racketBottom >= ballTop) {
 
-      
+
         isBallActive = false;
 
         //// ДОБОВЛЯЕМ ОЧКИ
         //game.score += 100;
 
-   
+
     }
 }
 
@@ -156,12 +174,11 @@ void ShowScore()
 
     _itoa_s(game.balls, txt, 10);
     TextOutA(window.context, 10, 100, "Balls", 5);
-    TextOutA(window.context, 200, 100, (LPCSTR)txt, strlen(txt));
+    TextOutA(window.context, 200, 100, (LPCSTR)txt, strlen(txt));  
 
     SelectObject(window.context, hTmp);  // восстанавливаем старый шрифт
     DeleteObject(hFont);                 // удаляем созданный шрифт
 }
-
 void ProcessInput()
 {
     if (GetAsyncKeyState(VK_LEFT)) racket.x -= racket.speed;
@@ -175,11 +192,11 @@ void ProcessInput()
         racket.isJumping = true;
         racket.Grav = -racket.jumpSpeed;
     }
-   /* if (racket.y > window.height - racket.height) {
-        racket.y = window.height - racket.height;
-        racket.isJumping = false;
-        racket.Grav = 0;
-    }*/
+    /* if (racket.y > window.height - racket.height) {
+         racket.y = window.height - racket.height;
+         racket.isJumping = false;
+         racket.Grav = 0;
+     }*/
 
 }
 
@@ -200,7 +217,7 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
         {
             TransparentBlt(window.context, x, y, x1, y1, hMemDC, 0, 0, x1, y1, RGB(0, 0, 0));
         }
-        else
+        else 
         {
             StretchBlt(hDC, x, y, x1, y1, hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
         }
@@ -211,24 +228,40 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
     DeleteDC(hMemDC);
 }
 
+void MouseBall(){
+    HDC hMemDC = CreateCompatibleDC(window.context);
+    HBITMAP hBallBmp = (HBITMAP)LoadImageA(NULL, "ball2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    if (hBallBmp) {
+        HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDC, hBallBmp);
+        BITMAP bm;
+        GetObject(hBallBmp, sizeof(BITMAP), &bm);
+ 
+        int ballSize = 20; // размер шарика мыши
+        TransparentBlt(window.context, mouse.p.x - ballSize, mouse.p.y - ballSize, ballSize, ballSize,hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, RGB(0, 0, 0));
+    }
+}
+
 void ShowRacketAndBall()
 {
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
-    ShowBitmap(window.context, (int)racket.x, (int)racket.y, (int)racket.width, (int)racket.height, racket.hBitmap);// 
+    ShowBitmap(window.context, (int)racket.x, (int)racket.y, (int)racket.width, (int)racket.height, racket.hBitmap);
 
-    // ОТРИСОВКА ВСЕХ ПЛАТФОРМ
+    // отрисовка платформ
     for (int i = 0; i < PLATFORM_COUNT; i++) {
         ShowBitmap(window.context, (int)platforms[i].x, (int)platforms[i].y,
             (int)platforms[i].width, (int)platforms[i].height, platforms[i].hBitmap);
     }
 
-    // ОТРИСОВКА ШАРА (только если активен)
+    // отрисовка шара
     if (isBallActive) {
         ShowBitmap(window.context, (int)(ball.x - ball.rad), (int)(ball.y - ball.rad),
             (int)ball.width, (int)ball.height, ball.hBitmap, true);
     }
 
-    //ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap);//
+   
+    MouseBall();
+
 }
 
 void LimitRacket()
@@ -237,37 +270,18 @@ void LimitRacket()
     racket.x = min(racket.x, window.width - racket.width);
 }
 
-//bool Collision(sprite a, sprite b)
-//{
-//    // Учитываем центрирование ракетки
-//    float racketLeft = racket.x - a.width / 2;
-//    float racketRight = racket.x + a.width / 2;
-//    float racketTop = a.y;
-//    float racketBottom = a.y + a.height;
-//
-//    float platformLeft = b.x;
-//    float platformRight = b.x + b.width;
-//    float platformTop = b.y;
-//    float platformBottom = b.y + b.height;
-//
-//    return (racketLeft < platformRight &&
-//        racketRight > platformLeft &&
-//        racketTop < platformBottom &&
-//        racketBottom > platformTop);
-//}
-
 bool HelpColl(sprite a, sprite b)
 {
-     if (a.x + a.width >= b.x  &&
-         a.x <= b.x + b.width &&
-         a.y + a.height >= b.y &&
-         a.y <= b.y + b.height)
+    if (a.x + a.width >= b.x &&
+        a.x <= b.x + b.width &&
+        a.y + a.height >= b.y &&
+        a.y <= b.y + b.height)
 
-         return true;
+        return true;
 
-        else
+    else
 
-            return false;
+        return false;
 }
 
 void Coll() {
@@ -295,21 +309,21 @@ void Coll() {
                 }
             }
             else {
-               
+
                 if (LEFT < RIGHT) {
-                    racket.x = platforms[i].x - racket.width;    
+                    racket.x = platforms[i].x - racket.width;
                 }
                 else {
-                    racket.x = platforms[i].x + platforms[i].width;  
+                    racket.x = platforms[i].x + platforms[i].width;
                 }
             }
         }
     }
 }
 
- 
+
 void BallColl() {
- 
+
     for (int i = 0; i < PLATFORM_COUNT; i++) {
         if (HelpColl(ball, platforms[i])) {
 
@@ -329,7 +343,7 @@ void BallColl() {
                 }
                 else {
                     ball.y = platforms[i].y + platforms[i].height;
-                    ball.Grav = -ball.Grav;  
+                    ball.Grav = -ball.Grav;
                 }
             }
             else {
@@ -347,143 +361,6 @@ void BallColl() {
     }
 
 }
-    
-    
-    
-    
-    
-
-
-
-//bool CheckCollision(float objectLeft, float objectTop, float objectRight, float objectBottom,
-//    float platformLeft, float platformTop, float platformRight, float platformBottom) {
-//    return (objectLeft < platformRight && objectRight > platformLeft &&
-//        objectTop < platformBottom && objectBottom > platformTop);
-//}
-//
-//// Функция для определения стороны столкновения
-//int GetCollisionSide(float objectLeft, float objectTop, float objectRight, float objectBottom,
-//    float platformLeft, float platformTop, float platformRight, float platformBottom) {
-//
-//    // Вычисляем перекрытия по осям
-//    float overlapHorizontal = min(objectRight, platformRight) - max(objectLeft, platformLeft);
-//    float overlapVertical = min(objectBottom, platformBottom) - max(objectTop, platformTop);
-//
-//    // Определяем сторону по меньшему перекрытию
-//    if (overlapHorizontal < overlapVertical) {
-//        // Боковое столкновение
-//        return (objectLeft < platformLeft) ? 1 : 2; // 1 = слева, 2 = справа
-//    }
-//    else {
-//        // Вертикальное столкновение  
-//        return (objectTop < platformTop) ? 3 : 4; // 3 = сверху, 4 = снизу
-//    }
-//}
-//
-//void Collision2() {
-//    float nextRacketPositionY = racket.y + racket.Grav;
-//
-//    for (int platformIndex = 0; platformIndex < PLATFORM_COUNT; platformIndex++) {
-//        // Границы ракетки
-//        float racketLeft = racket.x - racket.width / 2;
-//        float racketRight = racket.x + racket.width / 2;
-//        float racketTop = racket.y;
-//        float racketBottom = racket.y + racket.height;
-//
-//        // Границы платформы
-//        float platformLeft = platforms[platformIndex].x;
-//        float platformRight = platforms[platformIndex].x + platforms[platformIndex].width;
-//        float platformTop = platforms[platformIndex].y;
-//        float platformBottom = platforms[platformIndex].y + platforms[platformIndex].height;
-//
-//        // Проверяем столкновения
-//        bool currentCollision = CheckCollision(racketLeft, racketTop, racketRight, racketBottom,
-//            platformLeft, platformTop, platformRight, platformBottom);
-//        bool futureCollision = CheckCollision(racketLeft, nextRacketPositionY, racketRight, nextRacketPositionY + racket.height,
-//            platformLeft, platformTop, platformRight, platformBottom);
-//
-//        if (currentCollision || futureCollision) {
-//            // ОПРЕДЕЛЯЕМ СТОРОНУ СТОЛКНОВЕНИЯ
-//            int collisionSide = GetCollisionSide(racketLeft, racketTop, racketRight, racketBottom,
-//                platformLeft, platformTop, platformRight, platformBottom);
-//
-//            switch (collisionSide) {
-//            case 1: // СТОЛКНОВЕНИЕ СЛЕВА
-//                racket.x = platformLeft - racket.width / 2; // отталкиваем влево
-//                break;
-//
-//            case 2: // СТОЛКНОВЕНИЕ СПРАВА  
-//                racket.x = platformRight + racket.width / 2; // отталкиваем вправо
-//                break;
-//
-//            case 3: // СТОЛКНОВЕНИЕ СВЕРХУ (падаем на платформу)
-//                racket.y = platformTop - racket.height;
-//                racket.isJumping = false;
-//                racket.Grav = 0;
-//                break;
-//
-//            case 4: // СТОЛКНОВЕНИЕ СНИЗУ (ударяемся головой)
-//                racket.y = platformBottom;
-//                racket.Grav = 0.5f; // начинаем падать
-//                break;
-//            }
-//            break; // выходим после обработки первого столкновения
-//        }
-//    }
-//}
-
-//void CheckBallPlatformCollision() {
-//    if (!isBallActive) return;
-//
-//    for (int platformIndex = 0; platformIndex < PLATFORM_COUNT; platformIndex++) {
-//        // Границы шара
-//        float ballLeft = ball.x - ball.rad;
-//        float ballRight = ball.x + ball.rad;
-//        float ballTop = ball.y - ball.rad;
-//        float ballBottom = ball.y + ball.rad;
-//
-//        // Границы платформы
-//        float platformLeft = platforms[platformIndex].x;
-//        float platformRight = platforms[platformIndex].x + platforms[platformIndex].width;
-//        float platformTop = platforms[platformIndex].y;
-//        float platformBottom = platforms[platformIndex].y + platforms[platformIndex].height;
-//
-//        // Проверяем столкновение
-//        bool ballCollision = TestColl(ballLeft, ballTop, ballRight, ballBottom,
-//            platformLeft, platformTop, platformRight, platformBottom);
-//
-//        if (ballCollision) {
-//            // ОПРЕДЕЛЯЕМ СТОРОНУ СТОЛКНОВЕНИЯ
-//            int collisionSide = TestColl(ballLeft, ballTop, ballRight, ballBottom,
-//                platformLeft, platformTop, platformRight, platformBottom);
-//
-//            // ОБРАБАТЫВАЕМ ОТСКОК ШАРА
-//            switch (collisionSide) {
-//            case 1: // СТОЛКНОВЕНИЕ СЛЕВА
-//                ball.x = platformLeft - ball.rad;
-//                ball.dx = -abs(ball.dx); // двигаем влево
-//                break;
-//
-//            case 2: // СТОЛКНОВЕНИЕ СПРАВА  
-//                ball.x = platformRight + ball.rad;
-//                ball.dx = abs(ball.dx); // двигаем вправо
-//                break;
-//
-//            case 3: // СТОЛКНОВЕНИЕ СВЕРХУ
-//                ball.y = platformTop - ball.rad;
-//                ball.Grav = -abs(ball.Grav); // отскакиваем вверх
-//                break;
-//
-//            case 4: // СТОЛКНОВЕНИЕ СНИЗУ
-//                ball.y = platformBottom + ball.rad;
-//                ball.Grav = abs(ball.Grav); // отскакиваем вниз
-//                break;
-//            }
-//
-//            break; // выходим после первого столкновения
-//        }
-//    }
-//}
 
 void ProcessJumping() {
     // Гравитация применяется ВСЕГДА
@@ -499,9 +376,9 @@ void ProcessJumping() {
 
     // ПРОВЕРКА ЗЕМЛИ (низ экрана)
     if (racket.y > window.height - racket.height) {
-        racket.y = window.height - racket.height;  
-        racket.isJumping = false;  
-        racket.Grav = 0;           
+        racket.y = window.height - racket.height;
+        racket.isJumping = false;
+        racket.Grav = 0;
     }
 }
 
@@ -520,6 +397,13 @@ void InitWindow()
     GetClientRect(window.hWnd, &r);
 }
 
+
+void UpdateMouse()
+{
+    GetCursorPos(&mouse.p);
+    ScreenToClient(window.hWnd, &mouse.p);
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR    lpCmdLine,
@@ -527,24 +411,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     InitWindow();
     InitGame();
-    ShowCursor(NULL);
+    ShowCursor(FALSE);  // Скрыт курсор
+
+    
+    SetForegroundWindow(window.hWnd);
+    SetFocus(window.hWnd);
 
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
+        
+        UpdateMouse();
         ProcessInput();
         ProcessJumping();
-       
-      /*  Collision2();*/
         BallColl();
         Coll();
         LimitRacket();
         MoveBall();                    // Движение шара
         CheckBallRacketCollision();// Проверка столкновения шара с ракеткой
-       /* CheckBallPlatformCollision();*/ // Проверка столкновения шара с платформой
         ShowRacketAndBall();
         ShowScore();
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
         Sleep(16);
     }
-   
+
 }

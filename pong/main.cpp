@@ -1,8 +1,4 @@
-﻿//linker::system::subsystem  - Windows(/ SUBSYSTEM:WINDOWS)
-//configuration::advanced::character set - not set
-//linker::input::additional dependensies Msimg32.lib; Winmm.lib
-
-#include "windows.h"
+﻿#include "windows.h"
 
 // секция данных игры  
 typedef struct {
@@ -26,8 +22,10 @@ struct {
     int width, height;//сюда сохраним размеры окна которое создаст программа
 } window;
 
-HBITMAP hBack;// хэндл для фонового изображения
 
+HBITMAP hBack;// хэндл для фонового изображения
+HBITMAP hBack1;
+HBITMAP hBack2;
 //cекция кода
 
 void InitGame()
@@ -37,8 +35,10 @@ void InitGame()
     //результат работы LoadImageA сохраняет в хэндлах битмапов, рисование спрайтов будет произовдиться с помощью этих хэндлов
     ball.hBitmap = (HBITMAP)LoadImageA(NULL, "ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    enemy.hBitmap = (HBITMAP)LoadImageA(NULL, "racket_enemy.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    enemy.hBitmap = (HBITMAP)LoadImageA(NULL, "defka.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hBack = (HBITMAP)LoadImageA(NULL, "vagon.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hBack1 = (HBITMAP)LoadImageA(NULL, "stanciya.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hBack2 = (HBITMAP)LoadImageA(NULL, "f.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     platform.hBitmap = (HBITMAP)LoadImageA(NULL, "racket2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE); 
     //------------------------------------------------------
 
@@ -54,7 +54,11 @@ void InitGame()
     platform.width = 300; 
     platform.x = window.width - platform.width;
 
-    enemy.x = racket.x;//х координату оппонета ставим в ту же точку что и игрока
+    enemy.x = 300;//х координату оппонета ставим в ту же точку что и игрока
+    enemy.y = 500;
+    enemy.width = 500;
+    enemy.height = 600;
+    
 
     ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
@@ -97,6 +101,19 @@ void ProcessInput()
     if (GetAsyncKeyState(VK_RIGHT)) racket.x += racket.speed;
 
     
+}void input() {
+    if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+        static bool wasPressed = false;
+        if (!wasPressed) {
+            //game.current = (game.current + 1) % 3;
+          
+            wasPressed = true;
+        }
+    }
+    else {
+        static bool wasPressed = false;
+        wasPressed = false;
+    }
 }
 
 void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool alpha = false)
@@ -129,11 +146,17 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 
 void ShowRacketAndBall()
 {
-    ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
+    if (GetAsyncKeyState(VK_LBUTTON)) {
+        ShowBitmap(window.context, 0, 0, window.width, window.height, hBack1);//задний фон
+    }
+    else {
+        ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);//задний фон
+    }
+    
     ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap, true);// ракетка игрока
 
     ShowBitmap(window.context, platform.x, platform.y, platform.width, platform.height, platform.hBitmap);
-    ShowBitmap(window.context, enemy.x - racket.width / 2, 0, racket.width, racket.height, enemy.hBitmap, true);//ракетка оппонента
+    ShowBitmap(window.context, enemy.x, enemy.y, enemy.width, enemy.height, enemy.hBitmap);//ракетка оппонента
     ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);// шарик
 }
 
@@ -198,6 +221,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
         Sleep(16);//ждем 16 милисекунд (1/количество кадров в секунду)
         Collise();
+        input();
         ProcessInput();//опрос клавиатуры
         LimitRacket();//проверяем, чтобы ракетка не убежала за экран
        

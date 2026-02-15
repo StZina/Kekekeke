@@ -13,9 +13,9 @@ struct {
 } win;
 
 void load() {
-    game.back[0] = (HBITMAP)LoadImageA(0, "back1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    game.back[1] = (HBITMAP)LoadImageA(0, "back2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    game.back[2] = (HBITMAP)LoadImageA(0, "back3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    game.back[0] = (HBITMAP)LoadImageA(0, "Assets/back1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    game.back[1] = (HBITMAP)LoadImageA(0, "Assets/back2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    game.back[2] = (HBITMAP)LoadImageA(0, "Assets/back3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     game.current = 0;
 }
 

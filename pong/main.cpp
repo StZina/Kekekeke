@@ -3,6 +3,7 @@
 #include <vector>
 #include <String>
 
+
 // секция данных игры  
 typedef struct {
     float x, y, width, height, rad, dx, dy, speed;

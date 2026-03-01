@@ -1,7 +1,7 @@
 ﻿#include <windows.h>
 #include <iostream>
 #include <vector>
-#include <String>
+#include <string>
 
 
 // секция данных игры  
@@ -18,6 +18,7 @@ sprite platform;
 struct {
     int score, balls;//количество набранных очков и оставшихся "жизней"
     bool action = false;//состояние - ожидание (игрок должен нажать пробел) или игра
+    int currentTextIndex = 0;
 } game;
 
 struct {
@@ -80,7 +81,7 @@ void InitGame()
 
 
 
-void ShowScore()
+void ShowText(int x, int y , std::string text, int count)
 {
     SetTextColor(window.context, RGB(255, 0, 0));
     SetBkMode(window.context, TRANSPARENT);
@@ -88,9 +89,9 @@ void ShowScore()
     HFONT hFont = CreateFont(60, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 2, 0, "Arial");
     HFONT hOldFont = (HFONT)SelectObject(window.context, hFont);
   
-    TextOutA(window.context, window.width / 2 - 155, window.height / 2, "GAME OVER", 9);
-  
     SelectObject(window.context, hOldFont);
+  
+    TextOutA(window.context, x, y, text.c_str(), count);
     DeleteObject(hFont);
 }
 
@@ -170,12 +171,192 @@ void LimitRacket()
 bool tail = false;
 
 
+struct Answer {
+    std::string text;
+    int nextDialog;
+
+    Answer() : text(""), nextDialog(-1) {}
+    Answer(const std::string& t, int next)
+        : text(t), nextDialog(next) {
+    }
+};
+
+struct Dialog {
+    std::string speaker;
+    std::string text;
+    std::vector<Answer> variants;
+
+    Dialog(const std::string& spk, const std::string& t)
+        : speaker(spk), text(t) {
+    }
+};
+
+struct NarrativeText {
+    std::string text;
+
+    NarrativeText() : text("") {}
+    NarrativeText(const std::string& t) : text(t) {}
+};
+
+std::vector<NarrativeText> narratives;
+std::vector<Dialog> dialogs;
+std::vector<Dialog> currentDialogs;
+
+bool initDialogs = false;
+
+void initContentData() {
+
+   
+    if (initDialogs) return;
+    initDialogs = true;
+
+    narratives.clear();
+    dialogs.clear();
+    currentDialogs.clear();
+
+    //Нарратив
+
+    narratives.push_back({ "До работы больше времени, чем я рассчитывал." });
+
+    narratives.push_back({ "Легкий запах кофе приблежают меня к кофейне в европейском стиле." });
+
+    narratives.push_back({ "Никаких сомнений, чашка кофе перед первым рабочим днем, то без чего я не согласен работать." });
+
+    narratives.push_back({ "Я захожу и разносится звон колокольчика." });
+
+    narratives.push_back({ "Теплая атмосфера кофейни будто останавливает время, я единственный посетитель, хочется остаться в этом раю из темного дерева и мягких кресел, в конце зала виднеется небольшая сцена, уже представляю, как здесь вечерами играют джаз." });
+
+    narratives.push_back({ "За массивной длинной барной стойкой девушка в классическом костюме с жакетом, приближается ко мне, нужно сделать музыку тише, она хочет поприветствовать меня." });
+
+    narratives.push_back({ "Она показывает на меню напечатанное, и проиллюстрированное от руки." });
+
+    narratives.push_back({ "Из того, что мне известно американо, капучино, латте, целая витрина бисквитных сладостей манит, но на десерт нет времени." });
+
+    narratives.push_back({ "*Если музыку выключил слышит легкий джаз, в кофейни играет пластинка." });
+
+    narratives.push_back({ "Герой сидит за барной стойкой, Рэра увлеченно готовит кофе, этот процесс поглотил ее, ни один мускул на лице не шелохнулся, все внимание на ритуале." });
+
+    narratives.push_back({ "Она подает кофе в белой кружке на блюдце, небольшое печенье в форме искры." });
+
+    narratives.push_back({ "Пробую первым делом кофе, Рэра терпеливо ждет и наблюдает за моей реакцией." });
+
+   
+    
+    //Диалоги 
+
+    Dialog d0("Рэра",
+        "Ты всё ещё слушаешь музыку, когда не хочешь говорить, сделай хотя бы потише?");
+
+    d0.variants.push_back(Answer("Капучино", 1));
+    d0.variants.push_back(Answer("Американо", 2));
+    d0.variants.push_back(Answer("Латте. И пирожное — в подарок тебе.", 3));
+
+    dialogs.push_back(d0);
 
 
+    //Выбор "Капучино"
+
+    Dialog d1("ГГ", "Пена мягко касается губ. Вкус ровный.");
+    d1.variants.push_back(Answer("Продолжить", 4));
+    dialogs.push_back(d1);
+
+    Dialog d4("ГГ", "- Хороший баланс.");
+    d4.variants.push_back(Answer("Далее", 5));
+    dialogs.push_back(d4);
+
+    Dialog d5("Рэра", "Она чуть улыбается. В её глазах мелькает удовлетворение. - Рада, что оценил, не буду тебя беспокоить.");
+    d5.variants.push_back(Answer("Далее", 6));
+    dialogs.push_back(d5);
+
+    Dialog d6("ГГ", "Наслаждаюсь печеньем, оно немного подгоревшее, но это его не портит.");
+    d6.variants.push_back(Answer("Далее", 7));
+    dialogs.push_back(d6);
+
+    Dialog d7("Рэра", "- Вот ваш счёт, господин ГГ. - Удачного тебе дня! Возвращайся!");
+    d7.variants.push_back(Answer("Спасибо, рад был повидаться!", -1));
+    dialogs.push_back(d7);
+
+
+    //Выбор "Американо"
+
+    Dialog d2("ГГ", "Рэра приносит и уходит заниматься своими делами. Горечь ударяет сразу. Слишком прямо. Зато бодрит.");
+    d2.variants.push_back(Answer("Продолжить", 8));
+    dialogs.push_back(d2);
+
+    Dialog d8("ГГ", "Бариста заговорчески улыбается и поглядывает с конца барной стойки. Я знаю, что она специально сделала его крепче.");
+    d8.variants.push_back(Answer("Далее", 9));
+    dialogs.push_back(d8);
+
+    Dialog d9("ГГ", "Заедаю горечь печеньем, оно немного подгоревшее. Слишком много сегодня издевательств со стороны женщин, поскорей бы на завод.");
+    d9.variants.push_back(Answer("Далее", 10));
+    dialogs.push_back(d9);
+
+    Dialog d10("Рэра", "- Вот ваш счёт. - Хорошего дня!");
+    d10.variants.push_back(Answer("Спасибо, и тебе!", -1));
+    dialogs.push_back(d10);
+
+
+    //Выбор "Латте"
+
+    Dialog d3("ГГ", "Молоко смягчает вкус, но не прячет кофе. Кофе теплый, будто обнимает.");
+    d3.variants.push_back(Answer("Далее", 11));
+    dialogs.push_back(d3);
+
+    Dialog d11("ГГ", "Я делаю еще глоток и медлю, прежде чем ответить. - Похоже что ты стала настоящим профессионалом.");
+    d11.variants.push_back(Answer("Далее", 12));
+    dialogs.push_back(d11);
+
+    Dialog d12("Рэра", "Пауза. Её пальцы касаются края блюдца. Взгляд становится мягче. - Тебе было скучно без меня, да?");
+    d12.variants.push_back(Answer("Далее", 13));
+    dialogs.push_back(d12);
+
+    Dialog d13("Рэра", "Она улыбается мне, но смотрит куда-то в сторону сцены. - Можем как нибудь встретиться, нужно отпраздновать твой выпуск из университета.");
+    d13.variants.push_back(Answer("Далее", 14));
+    dialogs.push_back(d13);
+
+    Dialog d14("ГГ", "Уже допиваю кофе, смотрю на часы. С Рэрой чувство, что никуда и не уезжал, она так беззаботно со мной общается, почему мне так неловко?");
+    d14.variants.push_back(Answer("Далее", 15));
+    dialogs.push_back(d14);
+
+    Dialog d15("ГГ", "Можем, думаю да, но я спешу на первый рабочий день. Ты наверное знаешь, здесь ниже по дороге NECO.");
+    d15.variants.push_back(Answer("Далее", 16));
+    dialogs.push_back(d15);
+
+    Dialog d16("Рэра", "Немного в сметении. - Да, знаю, твои будущие коллеги часто заходят. Думаю, ты как нибудь посетишь наш Джаз концерт вместе с ними. - Сейчас принесу счёт, подожди немного.");
+    d16.variants.push_back(Answer("Далее", 17));
+    dialogs.push_back(d16);
+
+    Dialog d17("ГГ", "Она будто немного расстроилась после слов о NECO или ее тронуло то, что мне уже пора идти. Почему я снова то и думаю о ней? Не все ли равно?");
+    d17.variants.push_back(Answer("Далее", 18));
+    dialogs.push_back(d17);
+
+    Dialog d18("Рэра", "- Вот ваш счёт, господин ГГ. - Удачного тебе рабочего дня! Возвращайся поскорее!");
+    d18.variants.push_back(Answer("Спасибо, рад был встречи!", 19));
+    dialogs.push_back(d18);
+
+    Dialog d19("ГГ", "Выхожу с кофейни и направляюсь в сторону завода, мне идти еще минут 15, думаю прибавить громкости в наушниках, что бы не слышать шумы города.");
+    dialogs.push_back(d19);
+  
+    /*ShowText(window.width/2, window.height/2, narratives[0].text , 44);
+    ShowText(window.width / 2, 200, narratives[1].text, 64);
+    ShowText(100, 150, narratives[2].text, narratives[2].text.length());
+    ShowText(100, 200, narratives[3].text, narratives[3].text.length());
+    ShowText(100, 250, narratives[4].text, narratives[4].text.length());
+    ShowText(100, 300, narratives[5].text, narratives[5].text.length());
+    ShowText(100, 350, narratives[6].text, narratives[6].text.length());
+    ShowText(100, 400, narratives[7].text, narratives[7].text.length());
+    ShowText(100, 450, narratives[8].text, narratives[8].text.length());
+    ShowText(100, 500, narratives[9].text, narratives[9].text.length());
+    ShowText(100, 550, narratives[10].text, narratives[10].text.length());
+    ShowText(100, 600, narratives[11].text, narratives[11].text.length());*/
+    currentDialogs.push_back(dialogs[0]);
+   
+}
 
 
 void InitWindow()
 {
+
     SetProcessDPIAware();
     window.hWnd = CreateWindow("edit", 0, WS_POPUP | WS_VISIBLE | WS_MAXIMIZE, 0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -189,17 +370,65 @@ void InitWindow()
     GetClientRect(window.hWnd, &r);
 
 }
+void ShowCurrentNarrativeText() {
+    if (game.currentTextIndex < narratives.size()) {
+        // Показываем текущий текст
+        ShowText(100, 200, narratives[game.currentTextIndex].text,
+            narratives[game.currentTextIndex].text.length());
 
+        // Показываем счетчик (необязательно)
+        std::string counter = "Текст " + std::to_string(game.currentTextIndex + 1) +
+            " из " + std::to_string(narratives.size());
+        ShowText(100, 100, counter, counter.length());
+    }
+}
+
+void HandleMouseClicks() {
+    static bool wasPressed = false;
+
+    if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+        if (!wasPressed) {
+            // 1. Увеличиваем индекс
+            game.currentTextIndex++;
+            if (game.currentTextIndex >= narratives.size()) {
+                game.currentTextIndex = narratives.size() - 1;
+            }
+
+            // 2. *** ПЕРЕРИСОВЫВАЕМ ФОН ПРЯМО СЕЙЧАС ***
+            if (GetAsyncKeyState(VK_LBUTTON)) {
+                ShowBitmap(window.context, 0, 0, window.width, window.height, hBack1);
+            }
+            else {
+                ShowBitmap(window.context, 0, 0, window.width, window.height, hBack);
+            }
+
+            // 3. Перерисовываем все спрайты
+            ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap);
+            ShowBitmap(window.context, platform.x, platform.y, platform.width, platform.height, platform.hBitmap);
+            ShowBitmap(window.context, enemy.x, enemy.y, enemy.width, enemy.height, enemy.hBitmap);
+            ShowBitmap(window.context, 100, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true);
+
+            // 4. Рисуем НОВЫЙ текст
+            ShowText(100, 200, narratives[game.currentTextIndex].text,
+                narratives[game.currentTextIndex].text.length());
+
+            std::string counter = "Текст " + std::to_string(game.currentTextIndex + 1) +
+                " из " + std::to_string(narratives.size());
+            ShowText(100, 100, counter, counter.length());
+
+            wasPressed = true;
+        }
+    }
+    else {
+        wasPressed = false;
+    }
+}
 
 void Collise() {
 
     if (platform.x == racket.x + racket.width) {
         racket.x = 100;
     }
-
-
-
-
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -207,6 +436,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_ LPWSTR    lpCmdLine,
     _In_ int       nCmdShow)
 {
+   
 
     InitWindow();//здесь инициализируем все что нужно для рисования в окне
     InitGame();//здесь инициализируем переменные игры
@@ -215,16 +445,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
+        setlocale(LC_ALL, "");
         ShowRacketAndBall();//рисуем фон, ракетку и шарик
-        ShowScore();//рисуем очик и жизни
-        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
-        Sleep(16);//ждем 16 милисекунд (1/количество кадров в секунду)
+        initContentData();
+
+        ShowCurrentNarrativeText(); // <-- Добавьте эту строку
+
+        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
+        Sleep(16);
         Collise();
         input();
-        ProcessInput();//опрос клавиатуры
-        LimitRacket();//проверяем, чтобы ракетка не убежала за экран
-
+        HandleMouseClicks(); // <-- Добавьте эту строку
+        ProcessInput();
+        LimitRacket();
     }
+
+
+    //while (!GetAsyncKeyState(VK_ESCAPE))
+    //{
+    //    
+    //   
+    //    setlocale(LC_ALL, "");
+    //    ShowRacketAndBall();//рисуем фон, ракетку и шарик
+    //    initContentData();
+    //    HandleMouseClicks();
+    //    ShowCurrentNarrativeText();
+    //    
+    //    //ShowScore();//рисуем очик и жизни
+    //    BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
+    //    Sleep(16);//ждем 16 милисекунд (1/количество кадров в секунду)
+    //    Collise();
+    //    input();
+    //    ProcessInput();//опрос клавиатуры
+    //    LimitRacket();//проверяем, чтобы ракетка не убежала за экран
+
+    //}
 
 }
 
